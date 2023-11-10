@@ -1,0 +1,417 @@
+---
+title: "Marketing Project: Dal Rae Project"
+author: "Landon Smith"
+date: "`r Sys.Date()`"
+output: word_document
+---
+```{r}
+library(dplyr)
+
+#Import Sales Data
+sales_2018 = read.csv("/Users/landonsmith/Desktop/Dal Rae CSVs/2018 Sales.csv")
+sales_2019 = read.csv("/Users/landonsmith/Desktop/Dal Rae CSVs/2019 Sales.csv")
+sales_2020 = read.csv("/Users/landonsmith/Desktop/Dal Rae CSVs/2020 Sales.csv")
+sales_2021 = read.csv("/Users/landonsmith/Desktop/Dal Rae CSVs/2021 Sales.csv")
+sales_2022 = read.csv("/Users/landonsmith/Desktop/Dal Rae CSVs/2022 Sales.csv")
+sales_2023 = read.csv("/Users/landonsmith/Desktop/Dal Rae CSVs/2023 Sales.csv")
+
+#Drop Unnecessary Columns
+sales_2018 = subset(sales_2018, select = c(Item.Num, Item.Name, Num.Sold, Price.Sold, Amount))
+sales_2019 = subset(sales_2019, select = c(Item.Num, Item.Name, Num.Sold, Price.Sold, Amount))
+sales_2020 = subset(sales_2020, select = c(Item.Num, Item.Name, Num.Sold, Price.Sold, Amount))
+sales_2021 = subset(sales_2021, select = c(Item.Num, Item.Name, Num.Sold, Price.Sold, Amount))
+sales_2022 = subset(sales_2022, select = c(Item.Num, Item.Name, Num.Sold, Price.Sold, Amount))
+sales_2023 = subset(sales_2023, select = c(Item.Num, Item.Name, Num.Sold, Price.Sold, Amount))
+
+#Change Columns From Character Datatype to Numeric
+sales_2018$Num.Sold = as.numeric(sales_2018$Num.Sold)
+sales_2018$Price.Sold = as.numeric(sales_2018$Price.Sold)
+
+sales_2019$Num.Sold = as.numeric(sales_2019$Num.Sold)
+sales_2019$Price.Sold = as.numeric(sales_2019$Price.Sold)
+
+sales_2020$Num.Sold = as.numeric(sales_2020$Num.Sold)
+sales_2020$Price.Sold = as.numeric(sales_2020$Price.Sold)
+
+sales_2021$Num.Sold = as.numeric(sales_2021$Num.Sold)
+sales_2021$Price.Sold = as.numeric(sales_2021$Price.Sold)
+
+sales_2022$Num.Sold = as.numeric(sales_2022$Num.Sold)
+sales_2022$Price.Sold = as.numeric(sales_2022$Price.Sold)
+
+sales_2023$Num.Sold = as.numeric(sales_2023$Num.Sold)
+sales_2023$Price.Sold = as.numeric(sales_2023$Price.Sold)
+
+#Combine all Datasets
+sales_all_years <- rbind(sales_2018, sales_2019, sales_2020, sales_2021, sales_2022, sales_2023)
+#sales_all_years <- sales_2023
+sales_all_years
+
+```
+
+### Calculate Total Number Sold at Each Pricepoint
+```{r}
+#R is case sensitive, query by upper and lower case
+
+#Low Tier: Poor Man's Pepper Steak 
+poor_mans <- subset(sales_all_years, grepl("Poor", Item.Name))
+poor_mans
+
+poor_mans_grouped = poor_mans %>% group_by(Price.Sold) %>% summarise(number_sold = sum(Num.Sold))
+poor_mans_grouped
+
+#Medium Tier: Medallions of Filet Mignon
+medallions <- subset(sales_all_years, grepl("Med", Item.Name))
+medallions
+
+medallions_grouped = medallions %>% group_by(Price.Sold) %>% summarise(number_sold = sum(Num.Sold))
+medallions_grouped
+
+#High Tier: Dal Rae Famous Pepper Steak 12oz
+famous_pepper <- subset(sales_all_years, grepl("Peppr", Item.Name))
+famous_pepper
+
+famous_pepper_grouped = famous_pepper %>% group_by(Price.Sold) %>% summarise(number_sold = sum(Num.Sold))
+famous_pepper_grouped
+```
+
+### Removes pricepoints with volume too low to qualify & bundles
+```{r}
+#Low Tier: Poor Man's Pepper Steak 
+poor_mans_filtered = poor_mans_grouped[poor_mans_grouped$number_sold > 100, ]
+poor_mans_filtered
+
+#Medium Tier: Medallions of Filet Mignon
+medallions_filtered = medallions_grouped[medallions_grouped$number_sold > 300, ]
+medallions_filtered
+
+med_number_sold_vector = medallions_filtered$number_sold
+med_price_sold_vector = medallions_filtered$Price.Sold
+med_number_sold_vector
+med_price_sold_vector
+
+#High Tier: Dal Rae Famous Pepper Steak 12oz
+famous_pepper_filtered = famous_pepper_grouped[famous_pepper_grouped$number_sold > 300, ]
+
+#Removes Bundle Prices from Low/High Prices
+poor_mans_filtered = poor_mans_filtered[poor_mans_filtered$Price.Sold > 9, ]
+poor_mans_filtered
+
+low_number_sold_vector = poor_mans_filtered$number_sold
+low_price_sold_vector = poor_mans_filtered$Price.Sold
+low_number_sold_vector
+low_price_sold_vector
+
+famous_pepper_filtered = famous_pepper_filtered[famous_pepper_filtered$Price.Sold < 99, ]
+famous_pepper_filtered
+
+high_number_sold_vector = famous_pepper_filtered$number_sold
+high_price_sold_vector = famous_pepper_filtered$Price.Sold
+high_number_sold_vector
+high_price_sold_vector
+```
+### Import Manually Collected Data - Days on the Menu
+```{r}
+library(readxl)
+
+days_on_menu_poor_mans <- read_excel("~/Desktop/Dal Rae CSVs/Price Tier Days on Menu.xlsx", sheet = "Poor Man's")
+days_on_menu_medallions <- read_excel("~/Desktop/Dal Rae CSVs/Price Tier Days on Menu.xlsx", sheet = "Medallions")
+days_on_menu_famous_pepper <- read_excel("~/Desktop/Dal Rae CSVs/Price Tier Days on Menu.xlsx", sheet = "12oz Pepper")
+
+poor_mans_filtered$days_on_menu = days_on_menu_poor_mans$days_on_menu
+poor_mans_filtered
+
+medallions_filtered$days_on_menu = days_on_menu_medallions$days_on_menu
+medallions_filtered
+
+famous_pepper_filtered$days_on_menu = days_on_menu_famous_pepper$days_on_menu
+famous_pepper_filtered
+```
+### Intermediate Calculation for SLide
+```{r}
+poor_man_average = mean(poor_mans_filtered$Price.Sold)
+medallions_average = mean(medallions_filtered$Price.Sold)
+pepper_average = mean(famous_pepper_filtered$Price.Sold)
+
+poor_man_sum = sum(poor_mans_filtered$number_sold)
+medallions_sum = sum(medallions_filtered$number_sold)
+pepper_sum = sum(famous_pepper_filtered$number_sold)
+
+entree = c("Poor Man's Pepper Steak ($20-$30)", "Medallions of Filet Mignon ($30-$50)", "Dal Rae Famous Pepper Steak ($50+)")
+avg_price_sold = c(poor_man_average, medallions_average, pepper_average)
+number_sold = c(poor_man_sum, medallions_sum, pepper_sum)
+
+summary = data.frame(entree, avg_price_sold, number_sold)
+summary$revenue = summary$avg_price_sold * summary$number_sold
+
+```
+
+### Compute Sold Per Day Column & Projected Revenue Figures
+```{r}
+poor_mans_filtered$sold_per_day = poor_mans_filtered$number_sold/poor_mans_filtered$days_on_menu
+poor_mans_filtered$projected_revenue = poor_mans_filtered$Price.Sold*poor_mans_filtered$sold_per_day*365
+poor_mans_filtered
+
+medallions_filtered$sold_per_day = medallions_filtered$number_sold/medallions_filtered$days_on_menu
+medallions_filtered$projected_revenue = medallions_filtered$Price.Sold*medallions_filtered$sold_per_day*365
+medallions_filtered
+
+famous_pepper_filtered$sold_per_day = famous_pepper_filtered$number_sold/famous_pepper_filtered$days_on_menu
+famous_pepper_filtered$projected_revenue = famous_pepper_filtered$Price.Sold*famous_pepper_filtered$sold_per_day*365
+famous_pepper_filtered
+```
+
+### Calculate Elasticity for POS Collected Data
+```{r}
+#Low Tier: Poor Man's Pepper Steak 
+low_q_delta = (max(poor_mans_filtered$sold_per_day) - min(poor_mans_filtered$sold_per_day))/((max(poor_mans_filtered$sold_per_day)+min(poor_mans_filtered$sold_per_day))/2)
+
+low_p_delta = (max(poor_mans_filtered$Price.Sold) - min(poor_mans_filtered$Price.Sold))/((max(poor_mans_filtered$Price.Sold)+min(poor_mans_filtered$Price.Sold))/2)
+
+low_tier_elastciity = low_q_delta/low_p_delta
+low_tier_elastciity
+
+#Medium Tier: Medallions of Filet Mignon
+med_q_delta = (max(medallions_filtered$sold_per_day) - min(medallions_filtered$sold_per_day))/((max(medallions_filtered$sold_per_day)+min(medallions_filtered$sold_per_day))/2)
+
+med_p_delta = (max(medallions_filtered$Price.Sold) - min(medallions_filtered$Price.Sold))/((max(medallions_filtered$Price.Sold)+min(medallions_filtered$Price.Sold))/2)
+
+medium_tier_elastcity = med_q_delta/med_p_delta
+medium_tier_elastcity
+
+#High Tier: Dal Rae Famous Pepper Steak 12oz
+high_q_delta = (max(famous_pepper_filtered$sold_per_day) - min(famous_pepper_filtered$sold_per_day))/((max(famous_pepper_filtered$sold_per_day)+min(famous_pepper_filtered$sold_per_day))/2)
+
+high_p_delta = (max(famous_pepper_filtered$Price.Sold) - min(famous_pepper_filtered$Price.Sold))/((max(famous_pepper_filtered$Price.Sold)+min(famous_pepper_filtered$Price.Sold))/2)
+
+high_tier_elasticity = high_q_delta/high_p_delta
+high_tier_elasticity
+
+```
+
+### Graph POS Data Product Demand Curves 
+```{r}
+low_lm_model = lm(sold_per_day ~ Price.Sold, data=poor_mans_filtered)
+summary(low_lm_model)
+#plot(low_lm_model)
+
+med_lm_model = lm(sold_per_day ~ Price.Sold, data=medallions_filtered)
+summary(med_lm_model)
+#plot(med_lm_model)
+
+high_lm_model = lm(sold_per_day ~ Price.Sold, data=famous_pepper_filtered)
+summary(high_lm_model)
+#plot(high_lm_model)
+
+library("ggplot2")
+
+ggplot(data = poor_mans_filtered, aes(x = sold_per_day, y = Price.Sold)) +
+geom_point() + geom_smooth(method = "lm", se=FALSE) +
+xlab("Sold per Day") +
+ylab("Price Points") +
+ggtitle("POS Data: Poor Man's Pepper Steak")
+
+ggplot(data = medallions_filtered, aes(x = sold_per_day, y = Price.Sold)) +
+geom_point() + geom_smooth(method = "lm", se=FALSE) +
+xlab("Sold per Day") +
+ylab("Price Points") +
+ggtitle("POS Data: Medallions of Filet Mignon")
+
+ggplot(data = famous_pepper_filtered, aes(x = sold_per_day, y = Price.Sold)) +
+geom_point() + geom_smooth(method = "lm", se=FALSE) +
+xlab("Sold per Day") +
+ylab("Price Points") +
+ggtitle("POS Data: Dal Rae Famous Pepper Steak 12oz")
+```
+### Clean Data For Survey Demand Curves
+```{r}
+survey_data <- read_excel("~/Desktop/Dal Rae CSVs/Dal Rae Restaurant Customer Survey (Responses).xlsx")
+
+poor_mans_repsonses = subset(survey_data, select = c('Poor Mans 30 Discount','Poor Mans 20 Discount','Poor Mans 10 Discount','Poor Mans 5 Discount','Poor Mans 5 Increase', 'Poor Mans 10 Increase','Poor Mans 20 Increase','Poor Mans 30 Increase'))
+
+medallions_responses = subset(survey_data, select = c('Medallions 30 Discount','Medallions 20 Discount','Medallions 10 Discount','Medallions 5 Discount','Medallions 5 Increase', 'Medallions 10 Increase','Medallions 20 Increase','Medallions 30 Increase'))
+
+famous_pepper_responses = subset(survey_data, select = c('Famous Pepper 30 Discount','Famous Pepper 20 Discount','Famous Pepper 10 Discount','Famous Pepper 5 Discount','Famous Pepper 5 Increase', 'Famous Pepper 10 Increase','Famous Pepper 20 Increase','Famous Pepper 30 Increase'))
+
+
+frequency_converter <- function(column) {
+  for(i in 1:length(column)) {
+    if (column[i] == 'would not order') {
+      column[i] = 0
+      } else if (column[i] == 'every year') {
+      column[i] = 1/365
+      } else if (column[i] == 'every two months') {
+      column[i] = 6/365
+      } else if (column[i] == 'every month') {
+      column[i] = 12/365
+      } else if (column[i] == 'every two weeks') {
+      column[i] = 26/365
+      } else if (column[i] == 'every week') {
+      column[i] = 52/365
+      } else if (column[i] == '2x per week') {
+      column[i] = 104/365
+      } else {
+      column[i] = 156/365
+    }
+  } 
+return(column)
+}
+
+#Changes Frequency Values
+poor_mans_repsonses$`Poor Mans 30 Discount` = frequency_converter(poor_mans_repsonses$`Poor Mans 30 Discount`)
+poor_mans_repsonses$`Poor Mans 20 Discount` = frequency_converter(poor_mans_repsonses$`Poor Mans 20 Discount`)
+poor_mans_repsonses$`Poor Mans 10 Discount` = frequency_converter(poor_mans_repsonses$`Poor Mans 10 Discount`)
+poor_mans_repsonses$`Poor Mans 5 Discount` = frequency_converter(poor_mans_repsonses$`Poor Mans 5 Discount`)
+poor_mans_repsonses$`Poor Mans 5 Increase` = frequency_converter(poor_mans_repsonses$`Poor Mans 5 Increase`)
+poor_mans_repsonses$`Poor Mans 10 Increase` = frequency_converter(poor_mans_repsonses$`Poor Mans 10 Increase`)
+poor_mans_repsonses$`Poor Mans 20 Increase` = frequency_converter(poor_mans_repsonses$`Poor Mans 20 Increase`)
+poor_mans_repsonses$`Poor Mans 30 Increase` = frequency_converter(poor_mans_repsonses$`Poor Mans 30 Increase`)
+
+medallions_responses$`Medallions 30 Discount` = frequency_converter(medallions_responses$`Medallions 30 Discount`)
+medallions_responses$`Medallions 20 Discount` = frequency_converter(medallions_responses$`Medallions 20 Discount`)
+medallions_responses$`Medallions 10 Discount` = frequency_converter(medallions_responses$`Medallions 10 Discount`)
+medallions_responses$`Medallions 5 Discount` = frequency_converter(medallions_responses$`Medallions 5 Discount`)
+medallions_responses$`Medallions 5 Increase` = frequency_converter(medallions_responses$`Medallions 5 Increase`)
+medallions_responses$`Medallions 10 Increase` = frequency_converter(medallions_responses$`Medallions 10 Increase`)
+medallions_responses$`Medallions 20 Increase` = frequency_converter(medallions_responses$`Medallions 20 Increase`)
+medallions_responses$`Medallions 30 Increase` = frequency_converter(medallions_responses$`Medallions 30 Increase`)
+
+famous_pepper_responses$`Famous Pepper 30 Discount` = frequency_converter(famous_pepper_responses$`Famous Pepper 30 Discount`)
+famous_pepper_responses$`Famous Pepper 20 Discount` = frequency_converter(famous_pepper_responses$`Famous Pepper 20 Discount`)
+famous_pepper_responses$`Famous Pepper 10 Discount` = frequency_converter(famous_pepper_responses$`Famous Pepper 10 Discount`)
+famous_pepper_responses$`Famous Pepper 5 Discount` = frequency_converter(famous_pepper_responses$`Famous Pepper 5 Discount`)
+famous_pepper_responses$`Famous Pepper 5 Increase` = frequency_converter(famous_pepper_responses$`Famous Pepper 5 Increase`)
+famous_pepper_responses$`Famous Pepper 10 Increase` = frequency_converter(famous_pepper_responses$`Famous Pepper 10 Increase`)
+famous_pepper_responses$`Famous Pepper 20 Increase` = frequency_converter(famous_pepper_responses$`Famous Pepper 20 Increase`)
+famous_pepper_responses$`Famous Pepper 30 Increase` = frequency_converter(famous_pepper_responses$`Famous Pepper 30 Increase`)
+
+#Changes DataType of Each Column to Numeric
+
+# Function to change data type of a column
+poor_mans_repsonses = as.data.frame(lapply(poor_mans_repsonses, as.numeric))
+medallions_responses = as.data.frame(lapply(medallions_responses, as.numeric))
+famous_pepper_responses = as.data.frame(lapply(famous_pepper_responses, as.numeric))
+
+#Computes Averages of Each Column
+poor_mans_average_freq = colMeans(poor_mans_repsonses)
+medallions_average_freq = colMeans(medallions_responses)
+famous_pepper_average_freq = colMeans(famous_pepper_responses)
+```
+### Graph Survey Demand Curves
+```{r}
+library(dplyr)
+
+price_levels = c(0.7, 0.8, 0.9, 0.95, 1.05, 1.1, 1.2, 1.3)
+
+price_poor = 22.75
+price_poor_vec = round(price_levels * price_poor, 2)
+
+price_medallions = 44
+price_medallions_vec = round(price_levels * price_medallions, 2)
+
+price_famous_pepper = 69.50
+price_famous_pepper_vec = round(price_levels * price_famous_pepper, 2)
+  
+poor_df = data.frame(price_poor_vec, poor_mans_average_freq)
+poor_df$days_per_year = poor_df$poor_mans_average_freq * 365
+poor_df <- poor_df %>% rename("prices" = "price_poor_vec")
+
+medallions_df = data.frame(price_medallions_vec, medallions_average_freq)
+medallions_df$days_per_year = medallions_df$medallions_average_freq * 365
+medallions_df <- medallions_df %>% rename("prices" = "price_medallions_vec")
+
+famous_pepper_df = data.frame(price_famous_pepper_vec, famous_pepper_average_freq)
+famous_pepper_df$days_per_year = famous_pepper_df$famous_pepper_average_freq * 365
+famous_pepper_df <- famous_pepper_df %>% rename("prices" = "price_famous_pepper_vec")
+
+poor_df
+medallions_df
+famous_pepper_df
+
+#Creates Linear Regression Models
+med_survey_model = lm(days_per_year ~ prices, data=medallions_df)
+#summary(med_lm_model)
+#plot(med_lm_model)
+
+high_survey_model = lm(days_per_year ~ prices, data=famous_pepper_df)
+#summary(high_lm_model)
+#plot(high_lm_model)
+
+#Graphs The Frequency of Each Entree
+ggplot(data = poor_df, aes(x = days_per_year, y = prices)) +
+geom_point() + geom_smooth(method = "lm", se=FALSE) +
+xlab("Average Frequency (Days Per Year)") +
+ylab("Price Points") +
+ggtitle("Survey Data: Poor Man's Pepper Steak") + scale_y_continuous(breaks= price_poor_vec)
+
+ggplot(data = medallions_df, aes(x = days_per_year, y = prices)) +
+geom_point() + geom_smooth(method = "lm", se=FALSE) +
+xlab("Average Frequency (Days Per Year)") +
+ylab("Price Points") +
+ggtitle("Survey Data: Medallions of Filet Mignon") + scale_y_continuous(breaks= price_medalllions_vec)
+
+ggplot(data = famous_pepper_df, aes(x = days_per_year, y = prices)) +
+geom_point() + geom_smooth(method = "lm", se=FALSE) +
+xlab("Average Frequency (Days Per Year)") +
+ylab("Price Points") +
+ggtitle("Survey Data: Dal Rae Famous Pepper Steak") + scale_y_continuous(breaks= price_famous_pepper_vec)
+
+```
+
+### Calculate Elasticity for Survey Data
+```{r}
+#Poor Man's Pepper Steak
+low_q_delta = (max(poor_df$days_per_year) - min(poor_df$days_per_year))/((max(poor_df$days_per_year)+min(poor_df$days_per_year))/2)
+
+low_p_delta = (max(poor_df$prices) - min(poor_df$prices))/((max(poor_df$prices)+min(poor_df$prices))/2)
+
+low_tier_elastciity = low_q_delta/low_p_delta
+low_tier_elastciity
+
+#Medallions of Filet Mignon
+med_q_delta = (max(medallions_df$days_per_year) - min(medallions_df$days_per_year))/((max(medallions_df$days_per_year)+min(medallions_df$days_per_year))/2)
+
+med_p_delta = (max(medallions_df$prices) - min(medallions_df$prices))/((max(medallions_df$prices)+min(medallions_df$prices))/2)
+
+med_tier_elastciity = med_q_delta/med_p_delta
+med_tier_elastciity
+
+#Dal Rae Famous Pepper Steak
+high_q_delta = (max(famous_pepper_df$days_per_year) - min(famous_pepper_df$days_per_year))/((max(famous_pepper_df$days_per_year)+min(famous_pepper_df$days_per_year))/2)
+
+high_p_delta = (max(famous_pepper_df$prices) - min(famous_pepper_df$prices))/((max(famous_pepper_df$prices)+min(famous_pepper_df$prices))/2)
+high_tier_elastciity = high_q_delta/high_p_delta
+high_tier_elastciity
+```
+
+### Triangulation of Survey Data + POS Data for Price Increase Quantity Estimates
+```{r}
+#Price Definition
+new_data_med = data.frame(Price.Sold = 55)
+new_data_pepper = data.frame(Price.Sold = 82)
+
+new_data_med_survey = data.frame(prices = 55)
+new_data_pepper_survey = data.frame(prices = 82)
+
+#POS Prediction Medallions
+#percent_delta = -(1 - (predict(med_lm_model, new_data_med)/medallions_filtered$sold_per_day[8]))
+#percent_delta
+
+#Survey Data Prediction Medallions
+percent_delta = -(1- (predict(med_survey_model, new_data_med_survey)/((medallions_df$days_per_year[4] + medallions_df$days_per_year[5])/2)))
+predict(med_survey_model, new_data_med_survey)
+((medallions_df$days_per_year[4] + medallions_df$days_per_year[5])/2)
+percent_delta
+                  
+
+#Triangulate Medallions
+
+
+#POS Prediction Famous Pepper
+#predict(high_lm_model, new_data_pepper)
+
+#Survey Prediction Famous Pepper
+#predict(high_survey_model, new_data_pepper_survey)
+```
+
+

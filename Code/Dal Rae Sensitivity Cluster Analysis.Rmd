@@ -1,0 +1,73 @@
+---
+title: "Dal Rae Market Segmentation"
+author: "Landon Smith"
+date: "`r Sys.Date()`"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+sensitivity_data = read.csv("/Users/landonsmith/Desktop/Dal Rae CSVs/Sensitivity Cluster Analysis Data.csv")
+str(sensitivity_data)
+sensitivity_data = subset(sensitivity_data, select=-c(Income, Age, Sex, X))
+#sensitivity_data$Income = as.factor(sensitivity_data$Income)
+#sensitivity_data$Age = as.factor(sensitivity_data$Age)
+#sensitivity_data$Sex = as.factor(sensitivity_data$Sex)
+str(sensitivity_data)
+sensitivity_data
+```
+
+## Ward's Clustering: Diners
+```{r}
+distancematrix <- dist(scale(sensitivity_data), method = 'euclidean' )
+ 
+tree <- hclust(distancematrix, method = 'ward') 
+
+plot(tree)
+
+clusternumber <- cutree (tree, k = 4)
+clusternumber
+
+sensitivity_data$cluster = clusternumber
+sensitivity_data
+
+cluster1 = sensitivity_data[sensitivity_data$cluster == 1,]
+c1_mean = c(mean(cluster1$V1), mean(cluster1$V2),mean(cluster1$V3),mean(cluster1$V4),mean(cluster1$V5),mean(cluster1$V6))
+
+cluster2 = sensitivity_data[sensitivity_data$cluster == 2,]
+c2_mean = c(mean(cluster2$V1), mean(cluster2$V2),mean(cluster2$V3),mean(cluster2$V4),mean(cluster2$V5),mean(cluster2$V6))
+
+cluster3 = sensitivity_data[sensitivity_data$cluster == 3,]
+c3_mean = c(mean(cluster3$V1), mean(cluster3$V2),mean(cluster3$V3),mean(cluster3$V4),mean(cluster3$V5),mean(cluster3$V6))
+
+cluster4 = sensitivity_data[sensitivity_data$cluster == 4,]
+c4_mean = c(mean(cluster4$V1), mean(cluster4$V2),mean(cluster4$V3),mean(cluster4$V4),mean(cluster4$V5),mean(cluster4$V6))
+
+
+avg_table = cbind(c1_mean,
+c2_mean,
+c3_mean, 
+c4_mean)
+
+avg_table = as.data.frame(avg_table)
+avg_table
+```
+
+```{r}
+#Cluster 1
+respondents_c1 = sensitivity_data[sensitivity_data$cluster==1, ]
+respondents_c1
+#Cluster 2
+respondents_c2 = sensitivity_data[sensitivity_data$cluster==2, ]
+respondents_c2
+#Cluster 3
+respondents_c3 = sensitivity_data[sensitivity_data$cluster==3, ]
+respondents_c3
+#Cluster 4
+respondents_c4 = sensitivity_data[sensitivity_data$cluster==4, ]
+respondents_c4
+```
+
